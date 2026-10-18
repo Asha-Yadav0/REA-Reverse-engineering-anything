@@ -193,6 +193,18 @@ const installSessionToolAvailability = (
 ) => {
   if (session === undefined) return undefined;
   const linux = process.platform === "linux";
+  /**
+   * Wakaru needs both a binary and a resource limiter. Linux falls back to
+   * /usr/bin/prlimit; every other host must supply the limiter explicitly, so
+   * advertising the operation there without one would offer a call that always
+   * fails at resolution time.
+   */
+  const javascriptRecoveryConfigured = (
+    isLinux: boolean,
+    env: Readonly<NodeJS.ProcessEnv>,
+  ): boolean =>
+    isAbsolute(env.REA_WAKARU_COMMAND ?? "") &&
+    (isLinux || isAbsolute(env.REA_JAVASCRIPT_PRLIMIT_COMMAND ?? ""));
   const linuxX64 = linux && process.arch === "x64";
   const pwntools =
     linuxX64 && isAbsolute(environment.REA_PWNTOOLS_PYTHON ?? "");
@@ -223,7 +235,7 @@ const installSessionToolAvailability = (
       browserObservationEnabled: options.browserObservation !== undefined,
       javascriptRecoveryEnabled:
         options.javascriptRecovery !== undefined ||
-        (linuxX64 && isAbsolute(environment.REA_WAKARU_COMMAND ?? "")),
+        javascriptRecoveryConfigured(linux, environment),
       browserScenarioEnabled: options.browserScenarioCapture !== undefined,
       electronObservationEnabled: options.electronObservation !== undefined,
       electronAutomationEnabled:

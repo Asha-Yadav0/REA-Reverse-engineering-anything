@@ -4,11 +4,7 @@ import { expect, it } from "vitest";
 import { resolveWakaruCommand } from "../../../src/javascript/recovery/WakaruCommand.js";
 import { createTestTempDirectory } from "../../fixtures/temporaryDirectory.js";
 
-const linuxX64 = it.skipIf(
-  process.platform !== "linux" || process.arch !== "x64",
-);
-
-linuxX64(
+it(
   "refuses a directory configured as the Wakaru resource limiter",
   async () => {
     const root = await createTestTempDirectory("rea-wakaru-limiter-");
@@ -29,7 +25,10 @@ linuxX64(
   },
 );
 
-linuxX64("allows a symlink to a regular Wakaru resource limiter", async () => {
+// Windows needs Developer Mode or elevation to create file symlinks (EPERM).
+it.skipIf(process.platform === "win32")(
+  "allows a symlink to a regular Wakaru resource limiter",
+  async () => {
   const root = await createTestTempDirectory("rea-wakaru-limiter-symlink-");
   const command = join(root, "wakaru");
   const limiter = join(root, "prlimit");
@@ -44,4 +43,5 @@ linuxX64("allows a symlink to a regular Wakaru resource limiter", async () => {
       REA_JAVASCRIPT_PRLIMIT_COMMAND: limiter,
     }),
   ).resolves.toMatchObject({ limiter });
-});
+  },
+);
